@@ -58,14 +58,9 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
+            DrawerHeader(
+              decoration: BoxDecoration(color: AppColors.primary),
               child: Text('Settings', style: TextStyle(color: Colors.white)),
-            ),
-            CheckboxListTile(
-              title: const Text('Activate Something'),
-              value: provider.checkBox1,
-              onChanged: provider.setCheckBox1,
             ),
             ListTile(
               title: const Text('Toggle Theme'),

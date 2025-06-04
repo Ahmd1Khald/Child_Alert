@@ -14,6 +14,7 @@ class AppFunctions {
         final whatsappUrl = Uri.parse("https://wa.me/?text=$message");
 
         sendAlertMessage();
+        //playAlert();
       }
     });
 
@@ -29,6 +30,7 @@ class AppFunctions {
           TextButton(
             onPressed: () {
               dismissed = true;
+              //pauseAlert();
               Navigator.of(context).pop();
             },
             child: Text("Go Back"),
@@ -44,4 +46,26 @@ class AppFunctions {
       subject: '',
     );
   }
+
+  //static final assetsAudioPlayer = AssetsAudioPlayer();
+
+  // static Future<void> playAlert() async {
+  //   try {
+  //     // Load the audio file from assets
+  //     await assetsAudioPlayer
+  //         .open(Audio("assets/sounds/alert.mp3"))
+  //         .then((value) {});
+  //   } catch (e) {
+  //     print('Error: $e');
+  //   }
+  // }
+  //
+  // static Future<void> pauseAlert() async {
+  //   try {
+  //     // Load the audio file from assets
+  //     await assetsAudioPlayer.stop();
+  //   } catch (e) {
+  //     print('Error: $e');
+  //   }
+  // }
 }
