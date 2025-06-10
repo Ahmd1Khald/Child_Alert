@@ -1,10 +1,13 @@
-import 'package:car_alert/Core/Colors.dart';
-import 'package:car_alert/Core/Functions.dart';
-import 'package:car_alert/Core/Images.dart';
+import 'dart:async';
+
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 
+import '../../Core/Colors.dart';
+import '../../Core/Functions.dart';
+import '../../Core/Images.dart';
 import '../../Core/theme_provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -17,6 +20,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool pressed = false;
   bool isLoading = false;
+  final DatabaseReference _alertsRef = FirebaseDatabase.instance.ref().child(
+    'alerts',
+  );
+  StreamSubscription<DatabaseEvent>? _alertSubscription;
 
   void startMonitoring() {
     setState(() {
@@ -24,23 +31,81 @@ class _HomeScreenState extends State<HomeScreen> {
       pressed = false;
     });
 
-    Future.delayed(Duration(seconds: 5), () {
+    // Start listening for new alerts
+    _alertSubscription = _alertsRef.onChildAdded.listen((event) {
+      final alert = event.snapshot.value as Map<dynamic, dynamic>;
+      final message = alert['message'] ?? 'Child detected';
+      final age = alert['age'] ?? 'Unknown';
+      final timestamp = alert['timestamp'] ?? 'N/A';
+      bool wasDismissed = false;
+
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(
+              SnackBar(
+                content: Text('$message (Age: $age, Time: $timestamp)'),
+                backgroundColor: Colors.redAccent,
+                duration: const Duration(seconds: 5),
+                action: SnackBarAction(
+                  label: 'Dismiss',
+                  textColor: Colors.white,
+                  onPressed: () {
+                    wasDismissed = true;
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  },
+                ),
+                onVisible: () {
+                  // Reset wasDismissed when SnackBar appears
+                  wasDismissed = false;
+                },
+                behavior: SnackBarBehavior.floating,
+              ),
+            )
+            .closed
+            .then((reason) {
+              // If SnackBar closed without dismissal (e.g., timed out), show warning dialog
+              if (!wasDismissed && mounted && pressed) {
+                AppFunctions.showWarningDialog(
+                  context,
+                  '$message (Age: $age, Time: $timestamp)',
+                );
+              }
+            });
+      }
+    });
+
+    Future.delayed(const Duration(seconds: 5), () {
       if (mounted) {
         setState(() {
           isLoading = false;
           pressed = true;
         });
 
-        AppFunctions.showWarningDialog(context);
+        // Original warning dialog on monitoring start
+        //AppFunctions.showWarningDialog(context,'$message (Age: $age, Time: $timestamp)');
       }
     });
   }
 
   void stopMonitoring() {
+    // Cancel Firebase subscription
+    _alertSubscription?.cancel();
+    _alertSubscription = null;
+
     setState(() {
       isLoading = false;
       pressed = false;
     });
+
+    // Hide any active SnackBar
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  }
+
+  @override
+  void dispose() {
+    // Clean up subscription when widget is disposed
+    _alertSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -60,7 +125,10 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             DrawerHeader(
               decoration: BoxDecoration(color: AppColors.primary),
-              child: Text('Settings', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Settings',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
             ListTile(
               title: const Text('Toggle Theme'),
@@ -97,16 +165,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 )
               else if (pressed)
-                Text(
+                const Text(
                   "Monitoring Active..",
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 )
               else
-                Text(
+                const Text(
                   "Press to start monitoring",
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
                   if (pressed || isLoading) {
@@ -116,8 +184,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF0A1654),
-                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  backgroundColor: const Color(0xFF0A1654),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 14,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -125,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: Text(
                   pressed || isLoading ? "Stop Monitoring" : "Start Monitoring",
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     color: Colors.white,
                     letterSpacing: 1.2,

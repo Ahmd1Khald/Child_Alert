@@ -2,18 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
 class AppFunctions {
-  static void showWarningDialog(BuildContext context) {
+  static void showWarningDialog(BuildContext context, String msg) {
     bool dismissed = false;
 
     // Start timer
     Future.delayed(Duration(seconds: 5), () async {
       if (!dismissed) {
-        final message = Uri.encodeComponent(
-          "I forgot something important in the car. Heading back now.",
-        );
+        final message = Uri.encodeComponent(msg);
         final whatsappUrl = Uri.parse("https://wa.me/?text=$message");
 
-        sendAlertMessage();
+        sendAlertMessage(msg);
         //playAlert();
       }
     });
@@ -24,7 +22,7 @@ class AppFunctions {
       builder: (context) => AlertDialog(
         title: Text("Warning"),
         content: Text(
-          "You forgot something important in the car. Go back immediately!",
+          "EMERGENCY! A child has been detected inside the car – check immediately!",
         ),
         actions: [
           TextButton(
@@ -40,11 +38,8 @@ class AppFunctions {
     );
   }
 
-  static void sendAlertMessage() {
-    Share.share(
-      'You forgot something important in the car. Go back immediately!\n from CarAngle app',
-      subject: '',
-    );
+  static void sendAlertMessage(String msg) {
+    Share.share('EMERGENCY! $msg\n from CarAngle app', subject: '');
   }
 
   //static final assetsAudioPlayer = AssetsAudioPlayer();
